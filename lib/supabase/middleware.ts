@@ -2,6 +2,34 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Protected route paths
+  const protectedPrefixes = [
+    '/dashboard', '/admissions', '/fees', '/attendance',
+    '/exams', '/timetable', '/library', '/hostel',
+    '/transport', '/hr-payroll', '/placements', '/notices', '/users'
+  ]
+
+  const isProtected = protectedPrefixes.some(p => pathname.startsWith(p))
+  const isAuthPage = pathname === '/login' || pathname === '/verify-otp' || pathname === '/'
+
+  // Check if any supabase auth cookies exist
+  const allCookies = request.cookies.getAll()
+  const hasAuthCookie = allCookies.some(c => c.name.includes('auth-token') || c.name.includes('sb-'))
+
+  // Fast path 1: Unauthenticated request to protected route without auth cookies -> instant redirect to /login
+  if (isProtected && !hasAuthCookie) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  // Fast path 2: Unauthenticated request to public/auth pages without auth cookies -> return next immediately (0 network calls)
+  if (!isProtected && isAuthPage && !hasAuthCookie) {
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -25,29 +53,28 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  const { pathname } = request.nextUrl
+  // Wrap getUser in a 2.5s timeout to prevent Vercel Edge Middleware invocation timeout (504)
+  let user = null
+  try {
+    const getUserPromise = supabase.auth.getUser()
+    const timeoutPromise = new Promise<{ data: { user: null } }>((resolve) =>
+      setTimeout(() => resolve({ data: { user: null } }), 2500)
+    )
+    const res = await Promise.race([getUserPromise, timeoutPromise])
+    user = res.data?.user ?? null
+  } catch (err) {
+    user = null
+  }
 
   // Protect dashboard routes
-  if (pathname.startsWith('/dashboard') || pathname.startsWith('/admissions') ||
-      pathname.startsWith('/fees') || pathname.startsWith('/attendance') ||
-      pathname.startsWith('/exams') || pathname.startsWith('/timetable') ||
-      pathname.startsWith('/library') || pathname.startsWith('/hostel') ||
-      pathname.startsWith('/transport') || pathname.startsWith('/hr-payroll') ||
-      pathname.startsWith('/placements') || pathname.startsWith('/notices') ||
-      pathname.startsWith('/users')) {
-    if (!user) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/login'
-      return NextResponse.redirect(url)
-    }
+  if (isProtected && !user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
   }
 
   // Redirect authenticated users away from auth pages
-  if (user && (pathname === '/login' || pathname === '/' || pathname === '/verify-otp')) {
+  if (user && isAuthPage) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
@@ -55,3 +82,4 @@ export async function updateSession(request: NextRequest) {
 
   return supabaseResponse
 }
+
