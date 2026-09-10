@@ -61,17 +61,22 @@ function studentBlock(email, name, dob, deptVar, courseVar, secVar) {
 const parts = [];
 
 parts.push(`-- ============================================================`);
-parts.push(`-- College ERP - Migration 005: Demo User Seed`);
-parts.push(`-- 2 principals, 5 faculty, 20 students`);
-parts.push(`-- Password for ALL: Demo@2024!`);
-parts.push(`-- 2FA bypassed in app for @demo.com emails`);
+parts.push(`-- College ERP - Migration 005: Complete ERP Demo Seed`);
+parts.push(`-- 2 principals, 5 faculty, 20 students, 10 staff`);
+parts.push(`-- Full module records across all 21 tables`);
 parts.push(`-- ============================================================`);
 parts.push(`DO $$`);
 parts.push(`DECLARE`);
 parts.push(`  dept_cs UUID; dept_ec UUID; dept_me UUID; dept_ce UUID; dept_mba UUID;`);
 parts.push(`  course_btcs UUID; course_btec UUID; course_btme UUID; course_btce UUID; course_mba1 UUID;`);
 parts.push(`  sec_cs_a UUID; sec_cs_b UUID; sec_ec_a UUID; sec_me_a UUID; sec_ce_a UUID; sec_mba_a UUID;`);
-parts.push(`  new_uid UUID; fid UUID; sid UUID;`);
+parts.push(`  f1 UUID; f2 UUID; f3 UUID; f4 UUID; f5 UUID;`);
+parts.push(`  sub_cs201 UUID; sub_cs202 UUID; sub_cs203 UUID; sub_cs204 UUID;`);
+parts.push(`  sub_ec201 UUID; sub_ec202 UUID; sub_ec203 UUID;`);
+parts.push(`  sub_me201 UUID; sub_me202 UUID; sub_me203 UUID;`);
+parts.push(`  sub_ce201 UUID; sub_ce202 UUID;`);
+parts.push(`  sub_mba201 UUID; sub_mba202 UUID; sub_mba203 UUID;`);
+parts.push(`  new_uid UUID; fid UUID; sid UUID; st_id UUID; bk_id UUID; plc_id UUID;`);
 parts.push(`  hashed_pw TEXT;`);
 parts.push(`  iid UUID := '00000000-0000-0000-0000-000000000000';`);
 parts.push(`BEGIN`);
@@ -109,6 +114,13 @@ parts.push(facultyBlock('teacher3@demo.com', 'Prof. Suresh Babu',  'dept_me',  '
 parts.push(facultyBlock('teacher4@demo.com', 'Prof. Deepa Reddy',  'dept_mba', 'Associate Professor', '2019-06-01'));
 parts.push(facultyBlock('teacher5@demo.com', 'Prof. Vikram Singh',  'dept_cs',  'Assistant Professor', '2022-01-10'));
 
+parts.push(`  -- Fetch Faculty IDs`);
+parts.push(`  SELECT id INTO f1 FROM faculty WHERE email = 'teacher1@demo.com';`);
+parts.push(`  SELECT id INTO f2 FROM faculty WHERE email = 'teacher2@demo.com';`);
+parts.push(`  SELECT id INTO f3 FROM faculty WHERE email = 'teacher3@demo.com';`);
+parts.push(`  SELECT id INTO f4 FROM faculty WHERE email = 'teacher4@demo.com';`);
+parts.push(`  SELECT id INTO f5 FROM faculty WHERE email = 'teacher5@demo.com';`);
+
 parts.push(`  -- ============================================================`);
 parts.push(`  -- STUDENTS (20)`);
 parts.push(`  -- ============================================================`);
@@ -133,7 +145,7 @@ parts.push(studentBlock('student18@demo.com', 'Chirag Malhotra', '2000-09-27', '
 parts.push(studentBlock('student19@demo.com', 'Deepika Shetty',  '2001-03-11', 'dept_mba', 'course_mba1', 'sec_mba_a'));
 parts.push(studentBlock('student20@demo.com', 'Eshan Dubey',     '2004-12-01', 'dept_cs',  'course_btcs', 'sec_cs_a'));
 
-parts.push(`  RAISE NOTICE 'Demo seed: 2 principals, 5 faculty, 20 students created.';`);
+parts.push(`  RAISE NOTICE 'Demo seed completed.';`);
 parts.push(`END $$;`);
 
 const out = parts.join('\n') + '\n';

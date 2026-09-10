@@ -1,15 +1,20 @@
 -- ============================================================
--- College ERP - Migration 005: Demo User Seed
--- 2 principals, 5 faculty, 20 students
--- Password for ALL: Demo@2024!
--- 2FA bypassed in app for @demo.com emails
+-- College ERP - Migration 005: Complete ERP Demo Seed
+-- 2 principals, 5 faculty, 20 students, 10 staff
+-- Full module records across all 21 tables
 -- ============================================================
 DO $$
 DECLARE
   dept_cs UUID; dept_ec UUID; dept_me UUID; dept_ce UUID; dept_mba UUID;
   course_btcs UUID; course_btec UUID; course_btme UUID; course_btce UUID; course_mba1 UUID;
   sec_cs_a UUID; sec_cs_b UUID; sec_ec_a UUID; sec_me_a UUID; sec_ce_a UUID; sec_mba_a UUID;
-  new_uid UUID; fid UUID; sid UUID;
+  f1 UUID; f2 UUID; f3 UUID; f4 UUID; f5 UUID;
+  sub_cs201 UUID; sub_cs202 UUID; sub_cs203 UUID; sub_cs204 UUID;
+  sub_ec201 UUID; sub_ec202 UUID; sub_ec203 UUID;
+  sub_me201 UUID; sub_me202 UUID; sub_me203 UUID;
+  sub_ce201 UUID; sub_ce202 UUID;
+  sub_mba201 UUID; sub_mba202 UUID; sub_mba203 UUID;
+  new_uid UUID; fid UUID; sid UUID; st_id UUID; bk_id UUID; plc_id UUID;
   hashed_pw TEXT;
   iid UUID := '00000000-0000-0000-0000-000000000000';
 BEGIN
@@ -173,6 +178,12 @@ BEGIN
   SELECT id INTO new_uid FROM auth.users WHERE email = 'teacher5@demo.com';
   INSERT INTO profiles (id, role, faculty_id) VALUES (new_uid, 'faculty', fid) ON CONFLICT (id) DO UPDATE SET faculty_id = fid;
 
+  -- Fetch Faculty IDs
+  SELECT id INTO f1 FROM faculty WHERE email = 'teacher1@demo.com';
+  SELECT id INTO f2 FROM faculty WHERE email = 'teacher2@demo.com';
+  SELECT id INTO f3 FROM faculty WHERE email = 'teacher3@demo.com';
+  SELECT id INTO f4 FROM faculty WHERE email = 'teacher4@demo.com';
+  SELECT id INTO f5 FROM faculty WHERE email = 'teacher5@demo.com';
   -- ============================================================
   -- STUDENTS (20)
   -- ============================================================
@@ -596,5 +607,5 @@ BEGIN
   SELECT id INTO new_uid FROM auth.users WHERE email = 'student20@demo.com';
   INSERT INTO profiles (id, role, student_id) VALUES (new_uid, 'student', sid) ON CONFLICT (id) DO UPDATE SET student_id = sid;
 
-  RAISE NOTICE 'Demo seed: 2 principals, 5 faculty, 20 students created.';
+  RAISE NOTICE 'Demo seed completed.';
 END $$;
