@@ -43,11 +43,20 @@ export default function LoginPage() {
       // Skip 2FA for @demo.com accounts (demo/testing)
       if (isDemoUser) {
         console.log(`[Supabase Auth] Bypassing 2FA for demo user (${userEmail}). Navigating to dashboard...`)
-        window.location.href = '/dashboard'
+        sessionStorage.removeItem('erp_otp_email')
+        if (data.session) {
+          await supabase.auth.setSession(data.session)
+        }
+        router.refresh()
+        router.push('/dashboard')
         return
       }
 
-      // Step 2: Send email OTP for 2FA for non-demo users
+      // Step 2: For non-demo users, 2FA is required.
+      // Sign out temporary password session before sending OTP so unverified session cookies do not trigger server middleware redirect loop
+      console.log(`[Supabase Auth] Standard account detected (${userEmail}). Signing out password session before OTP verification...`)
+      await supabase.auth.signOut()
+
       console.log(`[Supabase Auth] Sending email OTP to ${cleanEmail}...`)
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email: cleanEmail,
@@ -56,7 +65,7 @@ export default function LoginPage() {
 
       if (otpError) {
         console.warn('[Supabase Auth] OTP send failed:', otpError.message)
-        // If OTP fails (e.g. rate limited or SMTP error), inform user or proceed
+        // If OTP fails (e.g. rate limited or SMTP error), inform user
         setError(`Failed to send OTP verification code: ${otpError.message}`)
         setLoading(false)
         return

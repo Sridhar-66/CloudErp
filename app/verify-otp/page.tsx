@@ -36,7 +36,7 @@ export default function VerifyOtpPage() {
 
     console.log(`[Supabase Auth] Verifying OTP token (${cleanOtp.length} digits) for: ${email}`)
 
-    const { error: verifyError } = await supabase.auth.verifyOtp({
+    const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
       email,
       token: cleanOtp,
       type: 'email',
@@ -51,7 +51,11 @@ export default function VerifyOtpPage() {
 
     console.log(`[Supabase Auth] OTP verified successfully. Navigating to /dashboard...`)
     sessionStorage.removeItem('erp_otp_email')
-    window.location.href = '/dashboard'
+    if (verifyData.session) {
+      await supabase.auth.setSession(verifyData.session)
+    }
+    router.refresh()
+    router.push('/dashboard')
   }
 
   async function handleResend() {
