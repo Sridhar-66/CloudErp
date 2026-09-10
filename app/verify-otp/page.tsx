@@ -27,26 +27,44 @@ export default function VerifyOtpPage() {
     setLoading(true)
     setError(null)
 
+    const cleanOtp = otp.trim()
+    if (cleanOtp.length < 6 || cleanOtp.length > 8) {
+      setError('Please enter a valid 6 to 8-digit verification code.')
+      setLoading(false)
+      return
+    }
+
+    console.log(`[Supabase Auth] Verifying OTP token (${cleanOtp.length} digits) for: ${email}`)
+
     const { error: verifyError } = await supabase.auth.verifyOtp({
       email,
-      token: otp,
+      token: cleanOtp,
       type: 'email',
     })
 
     if (verifyError) {
+      console.error(`[Supabase Auth] OTP verification failed:`, verifyError.message)
       setError(verifyError.message)
       setLoading(false)
       return
     }
 
+    console.log(`[Supabase Auth] OTP verified successfully. Navigating to /dashboard...`)
     sessionStorage.removeItem('erp_otp_email')
-    router.replace('/dashboard')
+    window.location.href = '/dashboard'
   }
 
   async function handleResend() {
     setError(null)
-    await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } })
-    setError('A new code has been sent to your email.')
+    console.log(`[Supabase Auth] Resending OTP code to: ${email}`)
+    const { error: resendError } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } })
+    if (resendError) {
+      console.error(`[Supabase Auth] Resend OTP failed:`, resendError.message)
+      setError(`Failed to resend code: ${resendError.message}`)
+    } else {
+      console.log(`[Supabase Auth] Resend OTP succeeded for: ${email}`)
+      setError('A new verification code has been sent to your email.')
+    }
   }
 
   return (
@@ -56,24 +74,24 @@ export default function VerifyOtpPage() {
 
         <h1 className="auth-heading">Verify identity</h1>
         <p className="auth-sub">
-          A 6-digit code was sent to <strong>{email}</strong>. Enter it below to complete sign-in.
+          Enter the verification code sent to <strong>{email}</strong> below to complete sign-in.
         </p>
 
         {error && <div className="auth-error">{error}</div>}
 
         <form onSubmit={handleVerify}>
           <div className="form-group">
-            <label className="form-label" htmlFor="otp">Verification code</label>
+            <label className="form-label" htmlFor="otp">Verification code (6-8 digits)</label>
             <input
               id="otp"
               type="text"
               inputMode="numeric"
-              pattern="[0-9]{6}"
-              maxLength={6}
+              pattern="[0-9]{6,8}"
+              maxLength={8}
               className="form-input"
               value={otp}
               onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
-              placeholder="123456"
+              placeholder="123456 or 12345678"
               required
               autoComplete="one-time-code"
               style={{ letterSpacing: '0.2em', fontSize: 'var(--text-lg)' }}

@@ -18,33 +18,53 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
+    const cleanEmail = email.trim().toLowerCase()
+    console.log(`[Supabase Auth] Attempting sign-in with password for: ${cleanEmail}`)
+
     const { data, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
+      email: cleanEmail,
       password,
     })
 
     if (signInError) {
+      console.error(`[Supabase Auth] Password sign-in failed:`, signInError.message)
       setError(signInError.message)
       setLoading(false)
       return
     }
 
     if (data.user) {
-      // Step 2: Send email OTP for 2FA
+      const userEmail = (data.user.email || cleanEmail).toLowerCase()
+      const isDemoUser = userEmail.endsWith('@demo.com') || cleanEmail.endsWith('@demo.com')
+
+      console.log(`[Supabase Auth] User authenticated successfully: ID=${data.user.id}, Email=${userEmail}`)
+      console.log(`[Supabase Auth] 2FA Check: isDemoUser=${isDemoUser}`)
+
+      // Skip 2FA for @demo.com accounts (demo/testing)
+      if (isDemoUser) {
+        console.log(`[Supabase Auth] Bypassing 2FA for demo user (${userEmail}). Navigating to dashboard...`)
+        window.location.href = '/dashboard'
+        return
+      }
+
+      // Step 2: Send email OTP for 2FA for non-demo users
+      console.log(`[Supabase Auth] Sending email OTP to ${cleanEmail}...`)
       const { error: otpError } = await supabase.auth.signInWithOtp({
-        email,
+        email: cleanEmail,
         options: { shouldCreateUser: false },
       })
 
       if (otpError) {
-        // If OTP fails (e.g. rate limited), proceed directly for now
-        console.warn('OTP send failed:', otpError.message)
-        router.push('/dashboard')
+        console.warn('[Supabase Auth] OTP send failed:', otpError.message)
+        // If OTP fails (e.g. rate limited or SMTP error), inform user or proceed
+        setError(`Failed to send OTP verification code: ${otpError.message}`)
+        setLoading(false)
         return
       }
 
+      console.log(`[Supabase Auth] OTP sent successfully to ${cleanEmail}. Redirecting to /verify-otp...`)
       // Store email for OTP verification
-      sessionStorage.setItem('erp_otp_email', email)
+      sessionStorage.setItem('erp_otp_email', cleanEmail)
       router.push('/verify-otp')
     }
   }

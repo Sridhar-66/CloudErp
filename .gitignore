@@ -25,3 +25,9 @@ supabase/.temp
 .DS_Store
 *.pem
 Thumbs.db
+
+# Build artifacts
+tsconfig.tsbuildinfo
+
+# Demo credentials — contains passwords, never commit
+DEMO_CREDENTIALS.txt
