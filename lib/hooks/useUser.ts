@@ -51,6 +51,13 @@ export function useUser() {
     }
   }, [])
 
+  // Redirect to login if not authenticated after loading
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login')
+    }
+  }, [loading, user])
+
   async function signOut() {
     await supabase.auth.signOut()
     router.push('/login')

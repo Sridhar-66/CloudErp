@@ -33,7 +33,10 @@ export default function ExamsPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => { loadData() }, [role])
+  useEffect(() => {
+    if (!role) return
+    loadData()
+  }, [role, profile])
 
   async function loadData() {
     setLoading(true)

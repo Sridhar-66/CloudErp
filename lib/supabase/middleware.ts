@@ -55,29 +55,42 @@ export async function updateSession(request: NextRequest) {
 
   // Wrap getUser in a 3s timeout to handle remote Supabase network latency safely
   let user = null
+  let timedOut = false
   try {
+    let didTimeout = false
     const getUserPromise = supabase.auth.getUser()
     const timeoutPromise = new Promise<{ data: { user: null } }>((resolve) =>
-      setTimeout(() => resolve({ data: { user: null } }), 3000)
+      setTimeout(() => { didTimeout = true; resolve({ data: { user: null } }) }, 3000)
     )
     const res = await Promise.race([getUserPromise, timeoutPromise])
     user = res.data?.user ?? null
+    timedOut = didTimeout && !user
   } catch (err) {
     user = null
   }
 
-  // Protect dashboard routes
+  // Protect dashboard routes.
+  // If getUser timed out but auth cookies are present, give the benefit of the doubt
+  // and let the request through rather than kicking the user back to /login.
   if (isProtected && !user) {
+    if (timedOut && hasAuthCookie) {
+      // Network was slow — session probably still valid, allow through
+      return supabaseResponse
+    }
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    return NextResponse.redirect(url)
+    const redirectResponse = NextResponse.redirect(url)
+    supabaseResponse.cookies.getAll().forEach(c => redirectResponse.cookies.set(c.name, c.value))
+    return redirectResponse
   }
 
   // Redirect authenticated users away from auth pages
   if (user && isAuthPage) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
+    const redirectResponse = NextResponse.redirect(url)
+    supabaseResponse.cookies.getAll().forEach(c => redirectResponse.cookies.set(c.name, c.value))
+    return redirectResponse
   }
 
   return supabaseResponse
