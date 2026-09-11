@@ -28,38 +28,44 @@ export default function DashboardPage() {
   async function loadData() {
     setDataLoading(true)
 
+    // Fire all queries in parallel based on role
+    const noticePromise = supabase
+      .from('notices')
+      .select('id, title, post_date')
+      .order('post_date', { ascending: false })
+      .limit(5)
+
     if (role === 'principal' || role === 'super_admin') {
-      const [feeRes, structRes] = await Promise.all([
+      const [feeRes, structRes, noticeRes] = await Promise.all([
         supabase.from('v_fee_summary').select('*').single(),
         supabase.from('v_structure_overview').select('*').single(),
+        noticePromise,
       ])
       setFeeSummary(feeRes.data as FeeSummary)
       setStructure(structRes.data as StructureOverview)
-    }
-
-    if (role === 'student' && profile?.student_id) {
-      const [attRes, feeRes] = await Promise.all([
+      setRecentNotices(noticeRes.data ?? [])
+    } else if (role === 'student' && profile?.student_id) {
+      const [attRes, feeRes, noticeRes] = await Promise.all([
         supabase.from('v_student_attendance_summary').select('*').eq('student_id', profile.student_id).single(),
         supabase.from('v_student_fee_summary').select('*').eq('student_id', profile.student_id).single(),
+        noticePromise,
       ])
       setStudentStats({
         attendance_pct: attRes.data?.attendance_pct ?? null,
         total_balance: feeRes.data?.total_balance ?? null,
       })
+      setRecentNotices(noticeRes.data ?? [])
+    } else {
+      // Faculty and other roles — just load notices
+      const { data: noticeData } = await noticePromise
+      setRecentNotices(noticeData ?? [])
     }
-
-    // Recent notices for everyone
-    const { data: noticeData } = await supabase
-      .from('notices')
-      .select('id, title, post_date')
-      .order('post_date', { ascending: false })
-      .limit(5)
-    setRecentNotices(noticeData ?? [])
 
     setDataLoading(false)
   }
 
-  if (loading || dataLoading) {
+  // Show page shell immediately; let data sections render progressively
+  if (loading) {
     return <div className="loading">Loading dashboard…</div>
   }
 

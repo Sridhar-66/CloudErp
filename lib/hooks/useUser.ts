@@ -23,11 +23,10 @@ export function useUser() {
         return
       }
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
+      // Fetch profile in parallel — we already know the user ID from the token
+      const [{ data: profileData }] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', user.id).single(),
+      ])
 
       if (mounted) {
         setUser({ id: user.id, email: user.email ?? null })
