@@ -36,7 +36,7 @@ export default function LoginPage() {
     if (data.user) {
       const userEmail = (data.user.email || cleanEmail).toLowerCase()
       console.log(`[Supabase Auth] User authenticated successfully: ID=${data.user.id}, Email=${userEmail}. Navigating to dashboard...`)
-      router.push('/dashboard')
+      router.replace('/dashboard')
     }
   }
 

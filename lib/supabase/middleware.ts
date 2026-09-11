@@ -60,7 +60,7 @@ export async function updateSession(request: NextRequest) {
     let didTimeout = false
     const getUserPromise = supabase.auth.getUser()
     const timeoutPromise = new Promise<{ data: { user: null } }>((resolve) =>
-      setTimeout(() => { didTimeout = true; resolve({ data: { user: null } }) }, 3000)
+      setTimeout(() => { didTimeout = true; resolve({ data: { user: null } }) }, 8000)
     )
     const res = await Promise.race([getUserPromise, timeoutPromise])
     user = res.data?.user ?? null
