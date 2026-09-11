@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
+  const router = useRouter()
   const supabase = createClient()
 
   const [email, setEmail] = useState('')
@@ -34,7 +36,7 @@ export default function LoginPage() {
     if (data.user) {
       const userEmail = (data.user.email || cleanEmail).toLowerCase()
       console.log(`[Supabase Auth] User authenticated successfully: ID=${data.user.id}, Email=${userEmail}. Navigating to dashboard...`)
-      window.location.href = '/dashboard'
+      router.push('/dashboard')
     }
   }
 

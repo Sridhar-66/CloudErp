@@ -53,12 +53,12 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Wrap getUser in an 8s timeout to handle remote Supabase network latency safely
+  // Wrap getUser in a 3s timeout to handle remote Supabase network latency safely
   let user = null
   try {
     const getUserPromise = supabase.auth.getUser()
     const timeoutPromise = new Promise<{ data: { user: null } }>((resolve) =>
-      setTimeout(() => resolve({ data: { user: null } }), 8000)
+      setTimeout(() => resolve({ data: { user: null } }), 3000)
     )
     const res = await Promise.race([getUserPromise, timeoutPromise])
     user = res.data?.user ?? null
