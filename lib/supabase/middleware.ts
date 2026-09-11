@@ -12,7 +12,7 @@ export async function updateSession(request: NextRequest) {
   ]
 
   const isProtected = protectedPrefixes.some(p => pathname.startsWith(p))
-  const isAuthPage = pathname === '/login' || pathname === '/verify-otp' || pathname === '/'
+  const isAuthPage = pathname === '/login' || pathname === '/'
 
   // Check if any supabase auth cookies exist
   const allCookies = request.cookies.getAll()
@@ -53,12 +53,12 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Wrap getUser in a 2.5s timeout to prevent Vercel Edge Middleware invocation timeout (504)
+  // Wrap getUser in an 8s timeout to handle remote Supabase network latency safely
   let user = null
   try {
     const getUserPromise = supabase.auth.getUser()
     const timeoutPromise = new Promise<{ data: { user: null } }>((resolve) =>
-      setTimeout(() => resolve({ data: { user: null } }), 2500)
+      setTimeout(() => resolve({ data: { user: null } }), 8000)
     )
     const res = await Promise.race([getUserPromise, timeoutPromise])
     user = res.data?.user ?? null
