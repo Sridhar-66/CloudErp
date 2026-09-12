@@ -43,3 +43,4 @@ ui_masterPrompt.md
 # AI tool configs (delete these two lines if you WANT them tracked in git)
 .agent/
 .clinerules/
+.continue/

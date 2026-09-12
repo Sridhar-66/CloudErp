@@ -143,6 +143,15 @@ export default function FeesPage() {
     }),
     { due: 0, paid: 0, balance: 0 }
   )
+  const studentFeeOverview = fees.reduce(
+    (acc, f) => ({
+      due: acc.due + Number(f.total_due),
+      paid: acc.paid + Number(f.amount_paid),
+      balance: acc.balance + Number(f.balance),
+      records: acc.records + 1,
+    }),
+    { due: 0, paid: 0, balance: 0, records: 0 }
+  )
   const studentBalances = new Map<string, number>()
   fees.forEach(f => {
     studentBalances.set(f.student_id, (studentBalances.get(f.student_id) ?? 0) + Number(f.balance))
@@ -203,7 +212,35 @@ export default function FeesPage() {
         ) : undefined}
       />
 
-      {fees.length > 0 && (
+      {role === 'student' && fees.length > 0 && (
+        <div className="panel" style={{ marginBottom: 24 }}>
+          <div className="panel-header">
+            <h2 className="panel-title">My fee overview</h2>
+          </div>
+          <div className="stats-grid" style={{ marginBottom: 16 }}>
+            <div className="stat-cell">
+              <div className="stat-value">₹{studentFeeOverview.due.toLocaleString()}</div>
+              <div className="stat-label">Total fee due</div>
+            </div>
+            <div className="stat-cell">
+              <div className="stat-value" style={{ color: 'var(--sage)' }}>₹{studentFeeOverview.paid.toLocaleString()}</div>
+              <div className="stat-label">Total paid</div>
+            </div>
+            <div className="stat-cell">
+              <div className="stat-value" style={{ color: studentFeeOverview.balance > 0 ? 'var(--bordeaux)' : 'var(--sage)' }}>
+                ₹{studentFeeOverview.balance.toLocaleString()}
+              </div>
+              <div className="stat-label">Outstanding balance</div>
+            </div>
+            <div className="stat-cell">
+              <div className="stat-value" style={{ color: 'var(--sage)' }}>{studentFeeOverview.records}</div>
+              <div className="stat-label">Fee entries</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {role !== 'student' && fees.length > 0 && (
         <div className="panel" style={{ marginBottom: 24 }}>
           <div className="panel-header">
             <h2 className="panel-title">Fee overview</h2>
