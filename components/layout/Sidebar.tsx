@@ -14,7 +14,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard',    href: '/dashboard',   roles: ['super_admin', 'principal', 'faculty', 'student'] },
   { label: 'Admissions',   href: '/admissions',  roles: ['principal', 'super_admin'] },
-  { label: 'Fees',         href: '/fees',         roles: ['principal', 'super_admin'] },
+  { label: 'Fees',         href: '/fees',         roles: ['principal', 'super_admin', 'student'] },
   { label: 'Attendance',   href: '/attendance',  roles: ['principal', 'faculty', 'student'] },
   { label: 'Exams',        href: '/exams',        roles: ['principal', 'faculty', 'student'] },
   { label: 'Timetable',   href: '/timetable',   roles: ['principal', 'faculty', 'student'] },
