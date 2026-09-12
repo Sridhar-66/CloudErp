@@ -36,8 +36,9 @@ export default function FeesPage() {
   const [bulkSaving, setBulkSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [bulkError, setBulkError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
-  useEffect(() => { loadData() }, [role])
+  useEffect(() => { loadData() }, [role, profile?.student_id])
 
   async function loadData() {
     setLoading(true)
@@ -56,11 +57,18 @@ export default function FeesPage() {
         ? supabase.from('students')
             .select('id, name, email, section_id, sections(name, academic_year, courses(name))')
             .eq('status', 'active')
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [], error: null }),
     ])
 
     setFees((feesRes.data ?? []) as Fee[])
     setStudents((studRes.data ?? []) as unknown as StudentRow[])
+    if (feesRes.error) {
+      setLoadError(`Fees: ${feesRes.error.message}`)
+    } else if (studRes.error) {
+      setLoadError(`Students: ${studRes.error.message}`)
+    } else {
+      setLoadError(null)
+    }
     setLoading(false)
   }
 
@@ -73,8 +81,12 @@ export default function FeesPage() {
 
   function openBulk() {
     setBulkForm({ section_id: '', fee_type: 'tuition', total_due: 0, academic_year: '', remarks: '' })
+    if (classOptions.length === 0) {
+      setBulkError('No active students loaded — check the Students module (or your connection) and try again.')
+    } else {
+      setBulkError(null)
+    }
     setShowBulkModal(true)
-    setBulkError(null)
   }
 
   function openEdit(f: Fee) {
@@ -109,7 +121,8 @@ export default function FeesPage() {
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this fee record?')) return
-    await supabase.from('fees').delete().eq('id', id)
+    const res = await supabase.from('fees').delete().eq('id', id)
+    if (res.error) { setError(res.error.message); return }
     loadData()
   }
 
@@ -212,6 +225,12 @@ export default function FeesPage() {
         ) : undefined}
       />
 
+      {loadError && (
+        <div className="auth-error" style={{ marginBottom: 16 }} role="alert">
+          Couldn't load fee data: {loadError}
+        </div>
+      )}
+
       {role === 'student' && fees.length > 0 && (
         <div className="panel" style={{ marginBottom: 24 }}>
           <div className="panel-header">
@@ -240,7 +259,7 @@ export default function FeesPage() {
         </div>
       )}
 
-      {role !== 'student' && fees.length > 0 && (
+      {(role === 'principal' || role === 'super_admin') && (
         <div className="panel" style={{ marginBottom: 24 }}>
           <div className="panel-header">
             <h2 className="panel-title">Fee overview</h2>
@@ -269,6 +288,11 @@ export default function FeesPage() {
               <div className="stat-label">Students pending</div>
             </div>
           </div>
+          {fees.length === 0 && (
+            <p className="text-sm text-muted" style={{ marginTop: 8 }}>
+              No fee records yet — add a fee or use “Bulk add (by class)” to get started.
+            </p>
+          )}
           {byType.length > 0 && (
             <div className="table-wrapper">
               <table className="data-table">
@@ -425,7 +449,7 @@ export default function FeesPage() {
                 <option value="">Select class</option>
                 {classOptions.map(c => (
                   <option key={c.section_id} value={c.section_id}>
-                    {`${`${c.course} ${c.name}`.trim()} — ${c.academic_year || '—'} ({c.student_count} students)`}
+                    {`${[c.course, c.name].filter(Boolean).join(' ')} — ${c.academic_year || '—'} ({c.student_count} students)`}
                   </option>
                 ))}
               </select>
