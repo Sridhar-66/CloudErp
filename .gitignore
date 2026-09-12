@@ -31,3 +31,6 @@ tsconfig.tsbuildinfo
 
 # Demo credentials — contains passwords, never commit
 DEMO_CREDENTIALS.txt
+
+# AutoClaw KDream data
+.autoclaw/
